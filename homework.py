@@ -77,15 +77,19 @@ def get_api_answer(timestamp):
         "params": {"from_date": timestamp},
     }
     try:
-        logging.info("параметр временной отметки:%s", api_dict["params"])
+        logging.info(
+            f'Начало запроса к эндпоинту: {api_dict["url"]}, '
+            f'заголовок: {api_dict["headers"]}, '
+            f'параметр временной отметки: {api_dict["params"]}'
+        )
         homework_statuses = requests.get(**api_dict)
         if homework_statuses.status_code != HTTPStatus.OK:
             raise exceptions.ApiRequestError(
-                f"Эндпоинт недоступен: {api_dict['url']}"
+                f'Эндпоинт недоступен: {api_dict["url"]}'
             )
         return homework_statuses.json()
     except requests.RequestException as error:
-        raise exceptions.ApiRequestError(f"Ошибка запроса: {error}")
+        raise exceptions.ApiRequestError(f'Ошибка запроса: {error}')
 
 
 def check_response(response):
@@ -99,10 +103,10 @@ def check_response(response):
     homeworks = response["homeworks"]
     if not isinstance(homeworks, list):
         raise TypeError("По ключу 'homeworks' не возвращается список")
-    status = response["homeworks"][0].get("status")
+    status = homeworks[0]["status"]
     if status not in HOMEWORK_VERDICTS:
         raise TypeError(f"Ошибка: недокументированный статус: {status}")
-    return homeworks[0]["status"]
+    return status
 
 
 def parse_status(homework):
