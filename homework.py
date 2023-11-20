@@ -1,3 +1,4 @@
+from typing import Dict
 import logging
 import os
 import requests
@@ -13,21 +14,21 @@ import exceptions
 load_dotenv()
 
 # константы токенов практикума и телеграма
-PRACTICUM_TOKEN = os.getenv("PRACTI_TOKEN")
-TELEGRAM_TOKEN = os.getenv("TELE_TOKEN")
+PRACTICUM_TOKEN: str = os.getenv("PRACTI_TOKEN")
+TELEGRAM_TOKEN: str = os.getenv("TELE_TOKEN")
 # константа  id чата телеграм
-TELEGRAM_CHAT_ID = os.getenv("CHAT_ID")
+TELEGRAM_CHAT_ID: str = os.getenv("CHAT_ID")
 # константа  интервала запроса
-RETRY_PERIOD = 600
+RETRY_PERIOD: int = 600
 # константа  эндпоинта статуса домашней работы
-ENDPOINT = "https://practicum.yandex.ru/api/user_api/homework_statuses/"
+ENDPOINT: str = "https://practicum.yandex.ru/api/user_api/homework_statuses/"
 # константа HTTP-заголовка
-HEADERS = {"Authorization": f"OAuth {PRACTICUM_TOKEN}"}
+HEADERS: Dict[str, str] = {"Authorization": f"OAuth {PRACTICUM_TOKEN}"}
 # константа TIME_INTERVA для подсчета секунд
 # для основной функции(дни*часы*минуты*секунды)
-TIME_INTERVAL = 30 * 24 * 60 * 60
+TIME_INTERVAL: int = 30 * 24 * 60 * 60
 # словарь статусов проверки дамашней работы
-HOMEWORK_VERDICTS = {
+HOMEWORK_VERDICTS: Dict[str, str] = {
     "approved": "Работа проверена: ревьюеру всё понравилось. Ура!",
     "reviewing": "Работа взята на проверку ревьюером.",
     "rejected": "Работа проверена: у ревьюера есть замечания.",
@@ -43,7 +44,7 @@ logger.addHandler(log_handler)
 
 def check_tokens():
     """Фунцкия проверяет доступность переменных окружения."""
-    return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
+    return all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID))
 
 
 def send_message(bot, message):
@@ -76,7 +77,7 @@ def get_api_answer(timestamp):
         "params": {"from_date": timestamp},
     }
     try:
-        logging.info("Начало запроса к эндпоинту:%s", api_dict["url"])
+        logging.info("параметр временной отметки:%s", api_dict["params"])
         homework_statuses = requests.get(**api_dict)
         if homework_statuses.status_code != HTTPStatus.OK:
             raise exceptions.ApiRequestError(
@@ -98,6 +99,9 @@ def check_response(response):
     homeworks = response["homeworks"]
     if not isinstance(homeworks, list):
         raise TypeError("По ключу 'homeworks' не возвращается список")
+    status = response["homeworks"][0].get("status")
+    if status not in HOMEWORK_VERDICTS:
+        raise TypeError(f"Ошибка: недокументированный статус: {status}")
     return homeworks[0]["status"]
 
 
